@@ -1,23 +1,22 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
-using HarmonyLib;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json.Linq;
-using System;
-using EFT;
-using EFT.UI.DragAndDrop;
-using System.Reflection;
-using EFT.InventoryLogic;
-using EFT.UI;
-using EFT.Interactive;
-using EFT.Quests;
 using System.Linq;
-using TMPro;
-using BepInEx;
+using System.Reflection;
 using Aki.Common.Http;
+using BepInEx;
 using Comfort.Common;
-
+using EFT;
+using EFT.Interactive;
+using EFT.InventoryLogic;
+using EFT.Quests;
+using EFT.UI;
+using EFT.UI.DragAndDrop;
+using HarmonyLib;
+using Newtonsoft.Json.Linq;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 // We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
 // GClass1766 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
@@ -83,8 +82,8 @@ namespace MoreCheckmarks
         public static JObject locales;
         // Barter item name and amount of price by items in price
         public static Dictionary<string, List<KeyValuePair<string, int>>>[] bartersByItemByTrader = new Dictionary<string, List<KeyValuePair<string, int>>>[9];
-        public static string[] traders = new string[] {"Prapor","Therapist","Fence","Skier","Peacekeeper","Mechanic","Ragman","Jaeger","Lighthouse keeper"};
-        public static int[] priorities = new int[] {0,1,2,3};
+        public static string[] traders = new string[] { "Прапором", "Терапевтом", "Скупщиком", "Лыжником", "Миротворцем", "Механиком", "Барахольщиком", "Егерем", "Смотрителем" };
+        public static int[] priorities = new int[] { 0, 1, 2, 3 };
         public static bool[] neededFor = new bool[4];
         public static Color[] colors = new Color[] { Color.yellow, needMoreColor, wishlistColor, barterColor };
 
@@ -99,7 +98,7 @@ namespace MoreCheckmarks
 
         private void Init()
         {
-            modPath = Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(MoreCheckmarksMod)).Location);
+            modPath = Path.GetDirectoryName(Assembly.GetAssembly(typeof(MoreCheckmarksMod)).Location);
             modPath.Replace('\\', '/');
 
             LoadConfig();
@@ -121,15 +120,15 @@ namespace MoreCheckmarks
             questDataCompleteByItemTemplateID.Clear();
             neededCompleteItemsByQuest.Clear();
 
-            for (int i=0; i<questData.Count; ++i)
+            for (int i = 0; i < questData.Count; ++i)
             {
                 JArray availableForFinishConditions = questData[i]["conditions"]["AvailableForFinish"] as JArray;
-                for(int j=0; j< availableForFinishConditions.Count; ++j)
+                for (int j = 0; j < availableForFinishConditions.Count; ++j)
                 {
                     if (availableForFinishConditions[j]["_parent"].ToString().Equals("HandoverItem"))
                     {
                         JArray targets = availableForFinishConditions[j]["_props"]["target"] as JArray;
-                        for (int k = 0; k< targets.Count; ++k)
+                        for (int k = 0; k < targets.Count; ++k)
                         {
                             if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
@@ -149,7 +148,7 @@ namespace MoreCheckmarks
                                 questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
                             }
 
-                            if(neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                            if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
                             {
                                 if (!items.ContainsKey(targets[k].ToString()))
                                 {
@@ -171,7 +170,7 @@ namespace MoreCheckmarks
                     if (availableForFinishConditions[j]["_parent"].ToString().Equals("FindItem"))
                     {
                         JArray targets = availableForFinishConditions[j]["_props"]["target"] as JArray;
-                        for (int k = 0; k< targets.Count; ++k)
+                        for (int k = 0; k < targets.Count; ++k)
                         {
                             // Check if there is a hand in item condition for the same item and at least the same count
                             // If so skip this, we will count the hand in instead
@@ -181,9 +180,9 @@ namespace MoreCheckmarks
                                 if (availableForFinishConditions[l]["_parent"].ToString().Equals("HandoverItem"))
                                 {
                                     JArray handInTargets = availableForFinishConditions[l]["_props"]["target"] as JArray;
-                                    if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) && 
-                                        (!int.TryParse(availableForFinishConditions[l]["_props"]["value"].ToString(), out int parsedValue) || 
-                                         !int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int currentParsedValue) || 
+                                    if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
+                                        (!int.TryParse(availableForFinishConditions[l]["_props"]["value"].ToString(), out int parsedValue) ||
+                                         !int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int currentParsedValue) ||
                                          parsedValue == currentParsedValue))
                                     {
                                         foundInHandin = true;
@@ -236,7 +235,7 @@ namespace MoreCheckmarks
                     if (availableForFinishConditions[j]["_parent"].ToString().Equals("LeaveItemAtLocation"))
                     {
                         JArray targets = availableForFinishConditions[j]["_props"]["target"] as JArray;
-                        for (int k = 0; k< targets.Count; ++k)
+                        for (int k = 0; k < targets.Count; ++k)
                         {
                             if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
@@ -278,7 +277,7 @@ namespace MoreCheckmarks
                     if (availableForFinishConditions[j]["_parent"].ToString().Equals("PlaceBeacon"))
                     {
                         JArray targets = availableForFinishConditions[j]["_props"]["target"] as JArray;
-                        for (int k = 0; k< targets.Count; ++k)
+                        for (int k = 0; k < targets.Count; ++k)
                         {
                             if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
@@ -319,12 +318,12 @@ namespace MoreCheckmarks
                 }
 
                 JArray availableForStartConditions = questData[i]["conditions"]["AvailableForStart"] as JArray;
-                for(int j=0; j< availableForStartConditions.Count; ++j)
+                for (int j = 0; j < availableForStartConditions.Count; ++j)
                 {
                     if (availableForStartConditions[j]["_parent"].ToString().Equals("HandoverItem"))
                     {
                         JArray targets = availableForStartConditions[j]["_props"]["target"] as JArray;
-                        for (int k = 0; k< targets.Count; ++k)
+                        for (int k = 0; k < targets.Count; ++k)
                         {
                             if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
@@ -366,7 +365,7 @@ namespace MoreCheckmarks
                     if (availableForStartConditions[j]["_parent"].ToString().Equals("FindItem"))
                     {
                         JArray targets = availableForStartConditions[j]["_props"]["target"] as JArray;
-                        for (int k = 0; k< targets.Count; ++k)
+                        for (int k = 0; k < targets.Count; ++k)
                         {
                             // Check if there is a hand in item condition for the same item and at least the same count
                             // If so skip this, we will count the hand in instead
@@ -431,7 +430,7 @@ namespace MoreCheckmarks
                     if (availableForStartConditions[j]["_parent"].ToString().Equals("LeaveItemAtLocation"))
                     {
                         JArray targets = availableForStartConditions[j]["_props"]["target"] as JArray;
-                        for (int k = 0; k< targets.Count; ++k)
+                        for (int k = 0; k < targets.Count; ++k)
                         {
                             if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
@@ -473,7 +472,7 @@ namespace MoreCheckmarks
                     if (availableForStartConditions[j]["_parent"].ToString().Equals("PlaceBeacon"))
                     {
                         JArray targets = availableForStartConditions[j]["_props"]["target"] as JArray;
-                        for (int k = 0; k< targets.Count; ++k)
+                        for (int k = 0; k < targets.Count; ++k)
                         {
                             if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
@@ -524,7 +523,7 @@ namespace MoreCheckmarks
             }
             JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts", false));
 
-            for(int i=0; i < assortData.Count; ++i)
+            for (int i = 0; i < assortData.Count; ++i)
             {
                 string currentTrader = traders[i];
                 bartersByItemByTrader[i] = new Dictionary<string, List<KeyValuePair<string, int>>>();
@@ -560,7 +559,7 @@ namespace MoreCheckmarks
 
         private bool StringJArrayContainsString(JArray arr, string s)
         {
-            for(int i=0; i < arr.Count; ++i)
+            for (int i = 0; i < arr.Count; ++i)
             {
                 if (arr[i].ToString().Equals(s))
                 {
@@ -638,16 +637,16 @@ namespace MoreCheckmarks
                 Logger.LogInfo("Configs loaded");
             }
             catch (FileNotFoundException) { /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */ }
-            catch (Exception ex) { MoreCheckmarksMod.LogError("Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: " + ex.Message); }
+            catch (Exception ex) { LogError("Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: " + ex.Message); }
         }
 
         private void LoadAssets()
         {
-            AssetBundle assetBundle = AssetBundle.LoadFromFile(modPath+"/MoreCheckmarksAssets");
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(modPath + "/MoreCheckmarksAssets");
 
-            if(assetBundle == null)
+            if (assetBundle == null)
             {
-                MoreCheckmarksMod.LogError("Failed to load assets, inspect window checkmark may be miscolored");
+                LogError("Failed to load assets, inspect window checkmark may be miscolored");
             }
             else
             {
@@ -656,7 +655,7 @@ namespace MoreCheckmarks
                 benderBold = assetBundle.LoadAsset<TMP_FontAsset>("BenderBold");
                 TMP_Text.OnFontAssetRequest += TMP_Text_onFontAssetRequest;
 
-                MoreCheckmarksMod.LogInfo("Assets loaded");
+                LogInfo("Assets loaded");
             }
         }
 
@@ -677,7 +676,7 @@ namespace MoreCheckmarks
             // Get assemblies
             Type ProfileSelector = null;
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for(int i=0; i < assemblies.Length; ++i)
+            for (int i = 0; i < assemblies.Length; ++i)
             {
                 if (assemblies[i].GetName().Name.Equals("Assembly-CSharp"))
                 {
@@ -685,7 +684,7 @@ namespace MoreCheckmarks
                 }
             }
 
-            var harmony = new HarmonyLib.Harmony("VIP.TommySoucy.MoreCheckmarks");
+            var harmony = new Harmony("VIP.TommySoucy.MoreCheckmarks");
 
             // Auto patch
             harmony.PatchAll();
@@ -705,10 +704,10 @@ namespace MoreCheckmarks
 
             try
             {
-                HideoutClass hideoutInstance = Comfort.Common.Singleton<HideoutClass>.Instance;
+                HideoutClass hideoutInstance = Singleton<HideoutClass>.Instance;
                 foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
                 {
-                    if(ad == null || ad.Template == null || ad.Template.Name == null || ad.NextStage == null)
+                    if (ad == null || ad.Template == null || ad.Template.Name == null || ad.NextStage == null)
                     {
                         continue;
                     }
@@ -725,7 +724,7 @@ namespace MoreCheckmarks
                     }
 
                     // If we don't want to get requirement of locked to construct areas, skip if it is locked to construct
-                    if (!MoreCheckmarksMod.showLockedModules && ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
+                    if (!showLockedModules && ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
                     {
                         continue;
                     }
@@ -735,18 +734,18 @@ namespace MoreCheckmarks
                     bool first = true;
                     while ((lastStage = ad.StageAt(lastStage.Level + 1)) != null && lastStage.Level != 0)
                     {
-                        if(first && (ad.Status == EFT.Hideout.EAreaStatus.Constructing || ad.Status == EFT.Hideout.EAreaStatus.Upgrading))
+                        if (first && (ad.Status == EFT.Hideout.EAreaStatus.Constructing || ad.Status == EFT.Hideout.EAreaStatus.Upgrading))
                         {
                             first = false;
                             continue;
                         }
                         futureStages.Add(lastStage);
-                        if (!MoreCheckmarksMod.showFutureModulesLevels)
+                        if (!showFutureModulesLevels)
                         {
                             break;
                         }
                     }
-                    if(futureStages.Count == 0)
+                    if (futureStages.Count == 0)
                     {
                         continue;
                     }
@@ -784,7 +783,7 @@ namespace MoreCheckmarks
 
                                                 if (areaNames != null)
                                                 {
-                                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">" + ad.Template.Name + " lvl"+stage.Level+"</color>");
+                                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(fulfilledColor) + ">" + ad.Template.Name + " ур." + stage.Level + "</color>");
                                                 }
                                             }
                                             else
@@ -796,7 +795,7 @@ namespace MoreCheckmarks
 
                                                 if (areaNames != null)
                                                 {
-                                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">" + ad.Template.Name + " lvl" + stage.Level + "</color>");
+                                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(needMoreColor) + ">" + ad.Template.Name + " ур." + stage.Level + "</color>");
                                                 }
                                             }
                                         }
@@ -806,14 +805,14 @@ namespace MoreCheckmarks
                         }
                         catch (Exception)
                         {
-                            MoreCheckmarksMod.LogError("Failed to get whether item " + itemTemplateID + " was needed for hideout area: " + ad.Template.Name);
+                            LogError("Failed to get whether item " + itemTemplateID + " was needed for hideout area: " + ad.Template.Name);
                         }
                     }
                 }
             }
             catch (Exception)
             {
-                MoreCheckmarksMod.LogError("Failed to get whether item "+itemTemplateID+" was needed for hideout upgrades.");
+                LogError("Failed to get whether item " + itemTemplateID + " was needed for hideout upgrades.");
             }
 
             return neededStruct;
@@ -851,9 +850,9 @@ namespace MoreCheckmarks
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                MoreCheckmarksMod.LogError("Failed to get whether item " + templateID + " is quest item: " + ex.Message + "\n" + ex.StackTrace);
+                LogError("Failed to get whether item " + templateID + " is quest item: " + ex.Message + "\n" + ex.StackTrace);
             }
 
             return false;
@@ -889,13 +888,11 @@ namespace MoreCheckmarks
     }
 
     [HarmonyPatch]
-    class QuestItemViewPanelShowPatch
+    internal class QuestItemViewPanelShowPatch
     {
         // Replaces the original QuestItemViewPanel.Show() to use custom checkmark colors and tooltips
-        [HarmonyPatch(typeof(EFT.UI.DragAndDrop.QuestItemViewPanel), nameof(EFT.UI.DragAndDrop.QuestItemViewPanel.Show))]
-        static bool Prefix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
-                            ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0,
-                            TextMeshProUGUI ____questItemLabel)
+        [HarmonyPatch(typeof(QuestItemViewPanel), nameof(QuestItemViewPanel.Show))]
+        private static bool Prefix(Profile profile, Item item, SimpleTooltip tooltip, QuestItemViewPanel __instance, ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_5, ref SimpleTooltip ___simpleTooltip_0, TextMeshProUGUI ____questItemLabel)
         {
             try
             {
@@ -951,7 +948,7 @@ namespace MoreCheckmarks
                     // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
                     if (questItem)
                     {
-                        ____questItemLabel.text = "QUEST ITEM";
+                        ____questItemLabel.text = "ПРЕДМЕТ ДЛЯ ЗАДАНИЯ";
                     }
                     ____questItemLabel.gameObject.SetActive(questItem);
                 }
@@ -964,7 +961,7 @@ namespace MoreCheckmarks
                 // Find needed with highest priority
                 int currentNeeded = -1;
                 int currentHighest = -1;
-                for(int i=0; i < 4; ++i)
+                for (int i = 0; i < 4; ++i)
                 {
                     if (MoreCheckmarksMod.neededFor[i] && MoreCheckmarksMod.priorities[i] > currentHighest)
                     {
@@ -1020,7 +1017,7 @@ namespace MoreCheckmarks
             }
             catch
             {
-                if(item != null)
+                if (item != null)
                 {
                     MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch postfix failed on item: " + item.TemplateId + " named " + item.LocalizedName());
                 }
@@ -1033,7 +1030,7 @@ namespace MoreCheckmarks
             return true;
         }
 
-        private static void SetCheckmark(EFT.UI.DragAndDrop.QuestItemViewPanel __instance, Image ____questIconImage, Sprite sprite, Color color)
+        private static void SetCheckmark(QuestItemViewPanel __instance, Image ____questIconImage, Sprite sprite, Color color)
         {
             try
             {
@@ -1048,19 +1045,17 @@ namespace MoreCheckmarks
             }
         }
 
-        private static void SetTooltip(EFT.Profile profile, List<string> areaNames, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
-                                       EFT.InventoryLogic.Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests,
-                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<KeyValuePair<string, int>>[] bartersByTrader, bool gotBarters)
+        private static void SetTooltip(Profile profile, List<string> areaNames, ref string ___string_5, ref SimpleTooltip ___simpleTooltip_0, ref SimpleTooltip tooltip, Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests, int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<KeyValuePair<string, int>>[] bartersByTrader, bool gotBarters)
         {
             try
             {
                 // Reset string
-                ___string_5 = "STASH".Localized(null) + ": <color=#dd831a>" + possessedQuestCount + "</color>/" + possessedCount;
+                ___string_5 = "В схроне".Localized(null) + ": <color=#dd831a>" /*+ possessedQuestCount + "</color>/"*/ + possessedCount + "</color>" + "\n";
 
                 // Show found in raid if found in raid
                 if (item.MarkedAsSpawnedInSession)
                 {
-                    ___string_5 += "\n" + "Item found in raid".Localized(null);
+                    ___string_5 += "\n" + "Предмет найден в рейде".Localized(null) + "\n";
                 }
 
                 // Add quests
@@ -1088,10 +1083,10 @@ namespace MoreCheckmarks
                             int index = 0;
                             foreach (KeyValuePair<string, string> questEntry in startQuests.questData)
                             {
-                                questStartString += (questEntry.Key+" name").Localized(null);
+                                questStartString += (questEntry.Key + " name").Localized(null);
                                 if (index != count - 1)
                                 {
-                                    questStartString += ",\n  ";
+                                    questStartString += ",\n";
                                 }
                                 else
                                 {
@@ -1104,8 +1099,9 @@ namespace MoreCheckmarks
                         if (gotStartQuests)
                         {
                             gotQuest = true;
-                            ___string_5 = "\nNeeded (" + possessedQuestCount + "/" + totalItemCount + ") to start quest" + (gotMoreThanOneStartQuest ? "s" : "") + ":\n  " + questStartString;
+                            ___string_5 = "\nПредмет будет/уже нужен в размере " + "<color=#dd831a>" + totalItemCount + "</color>" + " шт. для начала квест " + (gotMoreThanOneStartQuest ? "ов" : "а") + ":\n" + questStartString + "\n";
                         }
+                        
                         string questCompleteString = "<color=#dd831a>";
                         bool gotCompleteQuests = false;
                         bool gotMoreThanOneCompleteQuest = false;
@@ -1127,7 +1123,7 @@ namespace MoreCheckmarks
                                 questCompleteString += (questEntry.Key + " name").Localized(null);
                                 if (index != count - 1)
                                 {
-                                    questCompleteString += ",\n  ";
+                                    questCompleteString += ",\n";
                                 }
                                 else
                                 {
@@ -1140,7 +1136,7 @@ namespace MoreCheckmarks
                         if (gotCompleteQuests)
                         {
                             gotQuest = true;
-                            ___string_5 += "\nNeeded (" + possessedQuestCount + "/" + totalItemCount + ") to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + ":\n  " + questCompleteString;
+                            ___string_5 += "\nПредмет будет/уже нужен в размере " + "<color=#dd831a>" + totalItemCount + "</color>" + " шт. для завершения " + (gotMoreThanOneCompleteQuest ? "квестов" : "квеста") + ":\n" + questCompleteString + "\n";
                         }
                     }
                     else // Don't include future quests, do as vanilla
@@ -1175,19 +1171,19 @@ namespace MoreCheckmarks
                             if (item.QuestItem)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nItem is related to an active {0} quest".Localized(null), arg);
+                                ___string_5 += string.Format("\nПредмет связан с активным квестом {0}".Localized(null), arg);
                             }
                             Weapon weapon;
                             ConditionWeaponAssembly condition;
                             if (!gotQuest && (weapon = (item as Weapon)) != null && (condition = (conditionItem as ConditionWeaponAssembly)) != null && InventoryClass.IsWeaponFitsCondition(weapon, condition, false))
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
+                                ___string_5 += string.Format("\nПредмет соответствует требованиям активного квеста {0}".Localized(null), arg);
                             }
                             if (!gotQuest && item.MarkedAsSpawnedInSession)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nItem that has been found in raid for the {0} quest".Localized(null), arg);
+                                ___string_5 += string.Format("\nПредмет, который был найден в рейде для квеста {0}".Localized(null), arg);
                             }
                         }
                     }
@@ -1198,17 +1194,17 @@ namespace MoreCheckmarks
                 string areaNamesString = "";
                 for (int i = 0; i < areaNames.Count; ++i)
                 {
-                    areaNamesString += "\n  " + areaNames[i];
+                    areaNamesString += "\n" + areaNames[i];
                 }
                 if (!areaNamesString.Equals(""))
                 {
-                    ___string_5 += string.Format("\nNeeded ({1}/{2}) for area"+(areaNames.Count == 1 ? "" : "s") +":{0}", areaNamesString, possessedCount, requiredCount);
+                    ___string_5 += string.Format("\nНужно" + "<color=#dd831a> {2}" + "</color>" + " для" + (areaNames.Count == 1 ? "" : "") + ":{0}", areaNamesString, possessedCount, requiredCount);
                 }
 
                 // Add wishlist
                 if (wishlist)
                 {
-                    ___string_5 += string.Format("\nOn {0}", "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                    ___string_5 += string.Format("\nВ {0}", "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">списке желаемого</color>" + "\n");
                 }
 
                 // Add barters
@@ -1223,13 +1219,13 @@ namespace MoreCheckmarks
                             {
                                 if (!firstBarter)
                                 {
-                                    ___string_5 += "\n" + "Barter".Localized(null) + ":";
+                                    ___string_5 += "";
                                     firstBarter = true;
                                 }
-                                string bartersString = "\n With " + MoreCheckmarksMod.traders[i] + ":";
+                                string bartersString = "\n" + "Обменивается с ".Localized(null) + MoreCheckmarksMod.traders[i] + " на:" + "";
                                 for (int j = 0; j < bartersByTrader[i].Count; ++j)
                                 {
-                                    bartersString += "\n  <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value + ")";
+                                    bartersString += "\n<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value + ")" + "\n";
                                 }
                                 ___string_5 += bartersString;
                             }
@@ -1251,13 +1247,13 @@ namespace MoreCheckmarks
     }
 
     [HarmonyPatch]
-    class ItemSpecificationPanelShowPatch
+    internal class ItemSpecificationPanelShowPatch
     {
         // This postfix will run after the inspect window sets its checkmark if there is one
         // If there is one, the postfix for the QuestItemViewPanel will always have run before
         // This patch just changes the sprite to a default white one so we can set its color to whatever we need
-        [HarmonyPatch(typeof(EFT.UI.ItemSpecificationPanel), "method_2")]
-        static void Postfix(ref Item ___item_0, ref QuestItemViewPanel ____questItemViewPanel)
+        [HarmonyPatch(typeof(ItemSpecificationPanel), "method_2")]
+        private static void Postfix(ref Item ___item_0, ref QuestItemViewPanel ____questItemViewPanel)
         {
             try
             {
@@ -1283,11 +1279,11 @@ namespace MoreCheckmarks
     }
 
     [HarmonyPatch]
-    class AvailableActionsPatch
+    internal class AvailableActionsPatch
     {
         // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
         [HarmonyPatch(typeof(InteractionController), "smethod_3")]
-        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref InteractionInstance __result)
+        private static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref InteractionInstance __result)
         {
             try
             {
@@ -1306,11 +1302,11 @@ namespace MoreCheckmarks
                             {
                                 if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Взять</color></font>";
                                 }
                                 else
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Взять</color></font>";
                                 }
 
                             }
@@ -1318,11 +1314,11 @@ namespace MoreCheckmarks
                             {
                                 if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Взять</color></font>";
                                 }
                                 else
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
+                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Взять</color></font>";
                                 }
                             }
                         }
@@ -1332,11 +1328,11 @@ namespace MoreCheckmarks
                             {
                                 if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Взять</color></font>";
                                 }
                                 else
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Взять</color></font>";
                                 }
                             }
                             else
@@ -1345,11 +1341,11 @@ namespace MoreCheckmarks
                                 {
                                     if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                     {
-                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Взять</color></font>";
                                     }
                                     else
                                     {
-                                        action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
+                                        action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Взять</color></font>";
                                     }
                                 }
                                 else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
@@ -1359,22 +1355,22 @@ namespace MoreCheckmarks
                                     {
                                         if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                         {
-                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Взять</color></font>";
                                         }
                                         else
                                         {
-                                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
+                                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Взять</color></font>";
                                         }
                                     }
                                     else // Still need more
                                     {
                                         if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                         {
-                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Взять</color></font>";
                                         }
                                         else
                                         {
-                                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
+                                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Взять</color></font>";
                                         }
                                     }
                                 }
@@ -1384,16 +1380,16 @@ namespace MoreCheckmarks
                         {
                             if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
                             {
-                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Взять</color></font>";
                             }
                             else
                             {
-                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Взять</color></font>";
                             }
                         }
                         else if (questItem) // We don't want to color it for anything but it is a quest item
                         {
-                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Взять</color></font>";
                         }
                         //else leave it as it is
 
@@ -1401,40 +1397,40 @@ namespace MoreCheckmarks
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                MoreCheckmarksMod.LogError("Failed to process available actions for loose item: "+ex.Message+"\n"+ex.StackTrace);
+                MoreCheckmarksMod.LogError("Failed to process available actions for loose item: " + ex.Message + "\n" + ex.StackTrace);
             }
         }
     }
 
     [HarmonyPatch]
-    class QuestClassStatusPatch
+    internal class QuestClassStatusPatch
     {
         private static EQuestStatus preStatus;
 
         // This prefix will run before a quest's status has been set 
         [HarmonyPatch(typeof(QuestClass), "set_QuestStatus")]
-        static void Prefix(QuestClass __instance)
+        private static void Prefix(QuestClass __instance)
         {
             preStatus = __instance.QuestStatus;
         }
 
         // This postfix will run after a quest's status has been set 
         [HarmonyPatch(typeof(QuestClass), "set_QuestStatus")]
-        static void Postfix(QuestClass __instance)
+        private static void Postfix(QuestClass __instance)
         {
-            if(__instance == null)
+            if (__instance == null)
             {
                 MoreCheckmarksMod.LogError("Attempted setting queststatus but instance is null");
                 return;
             }
-            if(__instance.Template == null)
+            if (__instance.Template == null)
             {
                 return;
             }
 
-            MoreCheckmarksMod.LogInfo("Quest "+__instance.Template.Name+ " queststatus set to "+ __instance.QuestStatus);
+            MoreCheckmarksMod.LogInfo("Quest " + __instance.Template.Name + " queststatus set to " + __instance.QuestStatus);
 
             try
             {
@@ -1495,10 +1491,10 @@ namespace MoreCheckmarks
         }
     }
 
-    class ProfileSelectionPatch
+    internal class ProfileSelectionPatch
     {
         // This prefix will run right after a profile has been selected
-        static void Postfix()
+        private static void Postfix()
         {
             MoreCheckmarksMod.modInstance.LoadData();
         }
