@@ -179,11 +179,7 @@ namespace MoreCheckmarks
                             {
                                 if (availableForFinishConditions[l]["_parent"].ToString().Equals("HandoverItem"))
                                 {
-                                    JArray handInTargets = availableForFinishConditions[l]["_props"]["target"] as JArray;
-                                    if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
-                                        (!int.TryParse(availableForFinishConditions[l]["_props"]["value"].ToString(), out int parsedValue) ||
-                                         !int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int currentParsedValue) ||
-                                         parsedValue == currentParsedValue))
+                                    if (availableForFinishConditions[l]["_props"]["target"] is JArray handInTargets && StringJArrayContainsString(handInTargets, targets[k].ToString()) && (!int.TryParse(availableForFinishConditions[l]["_props"]["value"].ToString(), out int parsedValue) || !int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int currentParsedValue) || parsedValue == currentParsedValue))
                                     {
                                         foundInHandin = true;
                                         break;
@@ -374,11 +370,7 @@ namespace MoreCheckmarks
                             {
                                 if (availableForStartConditions[l]["_parent"].ToString().Equals("HandoverItem"))
                                 {
-                                    JArray handInTargets = availableForStartConditions[l]["_props"]["target"] as JArray;
-                                    if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
-                                        (!int.TryParse(availableForStartConditions[l]["_props"]["value"].ToString(), out int parsedValue) ||
-                                         !int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int currentParsedValue) ||
-                                         parsedValue == currentParsedValue))
+                                    if (availableForStartConditions[l]["_props"]["target"] is JArray handInTargets && StringJArrayContainsString(handInTargets, targets[k].ToString()) && (!int.TryParse(availableForStartConditions[l]["_props"]["value"].ToString(), out int parsedValue) || !int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int currentParsedValue) || parsedValue == currentParsedValue))
                                     {
                                         foundInHandin = true;
                                         break;
@@ -698,9 +690,11 @@ namespace MoreCheckmarks
 
         public static NeededStruct GetNeeded(string itemTemplateID, ref List<string> areaNames)
         {
-            NeededStruct neededStruct = new NeededStruct();
-            neededStruct.possessedCount = 0;
-            neededStruct.requiredCount = 0;
+            NeededStruct neededStruct = new NeededStruct
+            {
+                possessedCount = 0,
+                requiredCount = 0
+            };
 
             try
             {
@@ -760,8 +754,7 @@ namespace MoreCheckmarks
                             {
                                 if (requirement != null)
                                 {
-                                    EFT.Hideout.ItemRequirement itemRequirement = requirement as EFT.Hideout.ItemRequirement;
-                                    if (itemRequirement != null)
+                                    if (requirement is EFT.Hideout.ItemRequirement itemRequirement)
                                     {
                                         string requirementTemplate = itemRequirement.TemplateId;
                                         if (itemTemplateID == requirementTemplate)
@@ -831,9 +824,7 @@ namespace MoreCheckmarks
                 {
                     foreach (QuestDataClass quest in quests)
                     {
-                        if (quest != null &&
-                            quest.Status == EQuestStatus.Started &&
-                            quest.Template != null && quest.Template.Conditions != null && quest.Template.Conditions.ContainsKey(EQuestStatus.AvailableForFinish))
+                        if (quest != null && quest.Status == EQuestStatus.Started && quest.Template != null && quest.Template.Conditions != null && quest.Template.Conditions.ContainsKey(EQuestStatus.AvailableForFinish))
                         {
                             IEnumerable<ConditionItem> conditions = quest.Template.GetConditions<ConditionItem>(EQuestStatus.AvailableForFinish);
                             if (conditions != null)
@@ -866,10 +857,7 @@ namespace MoreCheckmarks
             {
                 for (int i = 0; i < 9; ++i)
                 {
-                    if (bartersByItemByTrader[i] != null)
-                    {
-                        bartersByItemByTrader[i].TryGetValue(ID, out bartersByTrader[i]);
-                    }
+                    bartersByItemByTrader[i]?.TryGetValue(ID, out bartersByTrader[i]);
                 }
             }
 
@@ -1149,9 +1137,7 @@ namespace MoreCheckmarks
                             {
                                 foreach (KeyValuePair<EQuestStatus, GClass2917> kvp in questDataClass.Template.Conditions)
                                 {
-                                    EQuestStatus equestStatus;
-                                    GClass2917 gclass;
-                                    kvp.Deconstruct(out equestStatus, out gclass);
+                                    kvp.Deconstruct(out EQuestStatus equestStatus, out GClass2917 gclass);
                                     foreach (Condition condition in gclass)
                                     {
                                         ConditionItem conditionItem2;
