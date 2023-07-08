@@ -109,6 +109,36 @@ namespace MoreCheckmarks
 
             DoPatching();
         }
+        
+        
+        public static (RawQuestClass, ConditionItem) GetQuestCondition(Profile profile, Item item)
+        {
+            RawQuestClass rawQuestClass = null;
+            
+            ConditionItem conditionItem = null;
+            
+            foreach (QuestDataClass questDataClass in profile.QuestsData)
+            {
+                if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
+                {
+                    foreach (KeyValuePair<EQuestStatus, GClass2917> kvp in questDataClass.Template.Conditions)
+                    {
+                        kvp.Deconstruct(out EQuestStatus equestStatus, out GClass2917 gclass);
+                        foreach (Condition condition in gclass)
+                        {
+                            ConditionItem conditionItem2;
+                            if (!questDataClass.CompletedConditions.Contains(condition.id) && (conditionItem2 = (condition as ConditionItem)) != null && conditionItem2.target.Contains(item.TemplateId))
+                            {
+                                rawQuestClass = questDataClass.Template;
+                                conditionItem = conditionItem2;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return (rawQuestClass, conditionItem);
+        }
 
         public void LoadData()
         {
@@ -929,6 +959,12 @@ namespace MoreCheckmarks
                         }
                     }
                 }
+                
+                if (!MoreCheckmarksMod.includeFutureQuests && item.MarkedAsSpawnedInSession && !questItem)
+                {
+                    (RawQuestClass? rawQuestClass, ConditionItem? conditionItem) = MoreCheckmarksMod.GetQuestCondition(profile, item);
+                    questItem = rawQuestClass != null;
+                }
 
                 // Setup label for inspect view
                 if (____questItemLabel != null)
@@ -1129,28 +1165,7 @@ namespace MoreCheckmarks
                     }
                     else // Don't include future quests, do as vanilla
                     {
-                        RawQuestClass rawQuestClass = null;
-                        ConditionItem conditionItem = null;
-                        foreach (QuestDataClass questDataClass in profile.QuestsData)
-                        {
-                            if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
-                            {
-                                foreach (KeyValuePair<EQuestStatus, GClass2917> kvp in questDataClass.Template.Conditions)
-                                {
-                                    kvp.Deconstruct(out EQuestStatus equestStatus, out GClass2917 gclass);
-                                    foreach (Condition condition in gclass)
-                                    {
-                                        ConditionItem conditionItem2;
-                                        if (!questDataClass.CompletedConditions.Contains(condition.id) && (conditionItem2 = (condition as ConditionItem)) != null && conditionItem2.target.Contains(item.TemplateId))
-                                        {
-                                            rawQuestClass = questDataClass.Template;
-                                            conditionItem = conditionItem2;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        (RawQuestClass? rawQuestClass, ConditionItem? conditionItem) = MoreCheckmarksMod.GetQuestCondition(profile, item);
                         if (rawQuestClass != null)
                         {
                             string arg = "<color=#dd831a>" + rawQuestClass.Name + "</color>";
